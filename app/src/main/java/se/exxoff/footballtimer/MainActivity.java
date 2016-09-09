@@ -83,7 +83,7 @@ private StatusReceiver mReceiver;
         else
         {
             LogHelper.WriteToLog("Stopping service...");
-            stopService(mStartIntent);
+            this.stopService(mStartIntent);
             button.setText(R.string._start);
             mStartIntent = null;
         }

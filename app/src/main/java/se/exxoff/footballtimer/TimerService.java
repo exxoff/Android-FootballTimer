@@ -13,7 +13,8 @@ public class TimerService extends Service
 
     private HandlerThread mHandlerThread;
     private Handler mHandler;
-    private Runnable mTimerRunnable;
+    private static Runnable mTimerRunnable;
+    private static Handler mTimerHandler;
     protected int mMinutes;
     protected int mSeconds;
 
@@ -34,7 +35,7 @@ public class TimerService extends Service
                 Intent intent = (Intent) msg.obj;
                 int startId = msg.arg1;
                 doIncrement(intent); // Kör doWork på en annan tråd
-                stopSelfResult(startId);
+//                stopSelfResult(startId);
             }
         };
     }
@@ -53,14 +54,26 @@ public class TimerService extends Service
     @Override
     public void onDestroy()
     {
-        mHandlerThread.quit();
-        mHandlerThread = null;
-        mHandler = null;
+        LogHelper.WriteToLog("Destroyed!");
+        mHandler.removeCallbacks(mTimerRunnable);
+//        mHandlerThread.quit();
+//        mHandlerThread = null;
+//        mHandler = null;
     }
 
 
     @Override
+    public boolean stopService(Intent intent)
+    {
+        LogHelper.WriteToLog("stopService");
+        mHandlerThread.quit();
+        mHandlerThread = null;
+        mHandler = null;
 
+        return super.stopService(intent);
+    }
+
+    @Override
     public IBinder onBind(Intent intent)
     {
         return null;
@@ -73,13 +86,13 @@ public class TimerService extends Service
             mSeconds = intent.getIntExtra("Seconds", 0);
             mMinutes = intent.getIntExtra("Minutes", 0);
 
-            mHandler = new Handler();
+//            mTimerHandler = new Handler();
             mTimerRunnable = new Runnable()
             {
                 @Override
                 public void run()
                 {
-                    if (mSeconds > 59)
+                    if (mSeconds > 58)
                     {
                         mMinutes++;
                         mSeconds = 0;

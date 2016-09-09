@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Football Timer</string>
+    <string name="_01">01</string>
+    <string name="_start">Start</string>
+    <string name="_stop">Stop</string>
+    <string name="_1st_half">1st half</string>
+    <string name="_2nd_half">2nd half</string>
+    <string name="ACTION_UPDATE_CHRONO">UPDATE_CHRONO</string>
+</resources>

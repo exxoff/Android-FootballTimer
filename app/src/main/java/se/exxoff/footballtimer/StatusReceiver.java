@@ -7,10 +7,10 @@ import android.content.Intent;
 public class StatusReceiver extends BroadcastReceiver
 {
     @Override
-    public void onReceive(Context context, Intent intent) {
-        String action = intent.getAction();
-        if( action.equals(R.string.ACTION_UPDATE_CHRONO) ) {
+    public void onReceive(Context context, Intent intent)
+    {
+        LogHelper.WriteToLog("Message received.");
 
-        }
+
     }
 }

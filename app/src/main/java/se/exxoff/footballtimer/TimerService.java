@@ -1,11 +1,16 @@
 package se.exxoff.footballtimer;
 
+import android.annotation.TargetApi;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.Message;
+import android.os.PowerManager;
+import android.support.v4.content.LocalBroadcastManager;
 
 public class TimerService extends Service
 {
@@ -17,6 +22,12 @@ public class TimerService extends Service
     private static Handler mTimerHandler;
     protected int mMinutes;
     protected int mSeconds;
+    private PowerManager pm;
+    private PowerManager.WakeLock wakeLock;
+    private boolean wakeUpFlag;
+    private LocalBroadcastManager broadcaster;
+
+    public static final String UPDATEUI = "se.exxoff.FotballTimer.UPDATEUI";
 
     public TimerService()
     {
@@ -25,6 +36,14 @@ public class TimerService extends Service
     @Override
     public void onCreate()
     {
+
+        LogHelper.WriteToLog("TimerService onCreate");
+        if (broadcaster == null)
+        {
+            broadcaster = LocalBroadcastManager.getInstance(this);
+        }
+
+
         mHandlerThread = new HandlerThread("Whatever");
         mHandlerThread.start();
         mHandler = new Handler(mHandlerThread.getLooper())
@@ -33,7 +52,7 @@ public class TimerService extends Service
             public void handleMessage(Message msg)
             {
                 Intent intent = (Intent) msg.obj;
-                int startId = msg.arg1;
+
                 doIncrement(intent); // Kör doWork på en annan tråd
 //                stopSelfResult(startId);
             }
@@ -43,9 +62,17 @@ public class TimerService extends Service
     @Override
     public int onStartCommand(Intent intent, int flags, int startId)
     {
+
+        wakeUpFlag = false;
+
+        pm = (PowerManager)getSystemService(Context.POWER_SERVICE);
+        wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "wakeLockTag");
+        LogHelper.WriteToLog("Screen is off, acquire Wake Lock");
+        wakeLock.acquire();
+
         Message msg = mHandler.obtainMessage();
         msg.obj = intent;
-        msg.arg1 = startId;
+
         msg.sendToTarget();
 
         return 0;
@@ -54,11 +81,13 @@ public class TimerService extends Service
     @Override
     public void onDestroy()
     {
+        wakeLock.release();
+        LogHelper.WriteToLog("Wake lock released.");
+        broadcaster = null;
+
         LogHelper.WriteToLog("Destroyed!");
         mHandler.removeCallbacks(mTimerRunnable);
-//        mHandlerThread.quit();
-//        mHandlerThread = null;
-//        mHandler = null;
+
     }
 
 
@@ -69,7 +98,9 @@ public class TimerService extends Service
         mHandlerThread.quit();
         mHandlerThread = null;
         mHandler = null;
-
+//        if (wakeLock != null)
+//        {
+//        }
         return super.stopService(intent);
     }
 
@@ -101,8 +132,9 @@ public class TimerService extends Service
                         mSeconds++;
                     }
 
+                    sendResult(mMinutes,mSeconds);
                     LogHelper.WriteToLog(mMinutes + ":" + mSeconds);
-                    mHandler.postDelayed(this, 1000);
+                    mHandler.postDelayed(this, TIMER_ONE_SECOND);
                 }
             };
 
@@ -110,6 +142,19 @@ public class TimerService extends Service
 
 
     }
+
+    public void sendResult(int Minutes,int Seconds) {
+        Intent intent = new Intent(UPDATEUI);
+
+        intent.putExtra("MINUTES", Minutes);
+        intent.putExtra("SECONDS", Seconds);
+        if (broadcaster != null)
+        {
+            broadcaster.sendBroadcast(intent);
+        }
+
+    }
+
 }
 
 

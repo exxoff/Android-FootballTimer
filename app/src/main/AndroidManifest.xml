@@ -14,6 +14,9 @@
 
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <intent-filter>
+                <action android:name="se.exxoff.intent.action.UPDATEUI"/>
+            </intent-filter>
         </activity>
 
         <service
@@ -25,6 +28,7 @@
             android:name=".TimerIntentService"
             android:exported="false">
         </service>
+        
     </application>
-
+<uses-permission android:name="android.permission.WAKE_LOCK"/>
 </manifest>

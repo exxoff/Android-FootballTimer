@@ -5,6 +5,8 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.PowerManager;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -15,7 +17,11 @@ public class MainActivity extends Activity
 {
 
     private Intent mStartIntent;
-private StatusReceiver mReceiver;
+    private StatusReceiver mReceiver;
+    private BroadcastReceiver receiver;
+
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -23,7 +29,52 @@ private StatusReceiver mReceiver;
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+
+
         mReceiver = new StatusReceiver();
+
+        receiver = new BroadcastReceiver()
+        {
+            @Override
+            public void onReceive(Context context, Intent intent)
+            {
+                LogHelper.WriteToLog("Receiving message");
+                TextView lblMinutes = (TextView) findViewById(R.id.lblMinutes);
+                TextView lblSeconds = (TextView) findViewById(R.id.lblSeconds);
+
+                String _Minutes = String.valueOf(intent.getIntExtra("MINUTES",0)).length() < 2
+                        ? "0" + String.valueOf(intent.getIntExtra("MINUTES",0)) :
+                        String.valueOf(intent.getIntExtra("MINUTES",0));
+
+                String _Seconds = String.valueOf(intent.getIntExtra("SECONDS",0)).length() < 2
+                        ? "0" + String.valueOf(intent.getIntExtra("SECONDS",0)) :
+                        String.valueOf(intent.getIntExtra("SECONDS",0));
+
+
+
+                lblMinutes.setText(_Minutes);
+                lblSeconds.setText(_Seconds);
+            }
+        };
+
+
+        if (savedInstanceState != null)
+        {
+
+            Button startStopButton = (Button) findViewById(R.id.buttonStartStop);
+            startStopButton.setText(savedInstanceState.getString("STARTBUTTONTEXT"));
+//            if (savedInstanceState.getString("STARTBUTTONTEXT").toLowerCase() == "start")
+//            {
+
+                LogHelper.WriteToLog(savedInstanceState.toString());
+                TextView lblMinutes = (TextView) findViewById(R.id.lblMinutes);
+                TextView lblSeconds = (TextView) findViewById(R.id.lblSeconds);
+
+                lblMinutes.setText(savedInstanceState.getCharSequence("MINUTESTEXT"));
+                lblSeconds.setText(savedInstanceState.getCharSequence("SECONDSTEXT"));
+//            }
+
+        }
     }
 
     @Override
@@ -36,6 +87,14 @@ private StatusReceiver mReceiver;
         registerReceiver(mReceiver,filter);
         LogHelper.WriteToLog("onStart");
 
+        setupUI();
+
+        LocalBroadcastManager.getInstance(this).registerReceiver((receiver),
+                new IntentFilter(TimerService.UPDATEUI));
+    }
+
+    private void setupUI()
+    {
         Button startButton = (Button) findViewById(R.id.buttonStartStop);
 
         startButton.setOnClickListener(new View.OnClickListener()
@@ -47,14 +106,50 @@ private StatusReceiver mReceiver;
                 onButtonStartClick((Button) v);
             }
         });
+
+        Button secondHalfButton = (Button) findViewById(R.id.button2ndHalf);
+
+        secondHalfButton.setOnClickListener(new View.OnClickListener()
+        {
+            @Override
+            public void onClick(View v)
+            {
+                LogHelper.WriteToLog("Second half");
+                onSecondHalfClick((Button) v);
+        }
+    });
+
+        Button firstHalfButton = (Button) findViewById(R.id.button1stHalf);
+
+        firstHalfButton.setOnClickListener(new View.OnClickListener()
+        {
+            @Override
+            public void onClick(View v)
+            {
+                LogHelper.WriteToLog("First half");
+                onFirstHalfClick((Button) v);
+            }
+        });
     }
 
-    @Override
-    protected void onStop()
+    private void onFirstHalfClick(Button v)
     {
-        super.onStop();
+        TextView lblMinutes = (TextView) findViewById(R.id.lblMinutes);
+        TextView lblSeconds = (TextView) findViewById(R.id.lblSeconds);
+        lblMinutes.setText("00");
+        lblSeconds.setText("00");
 
-        unregisterReceiver(mReceiver);
+//        LocalBroadcastManager.getInstance(this).registerReceiver((receiver),
+//            new IntentFilter(TimerService.UPDATEUI)
+//        );
+    }
+
+    private void onSecondHalfClick(Button v)
+    {
+        TextView lblMinutes = (TextView) findViewById(R.id.lblMinutes);
+        TextView lblSeconds = (TextView) findViewById(R.id.lblSeconds);
+        lblMinutes.setText("45");
+        lblSeconds.setText("00");
     }
 
     private void onButtonStartClick(Button button)
@@ -88,10 +183,33 @@ private StatusReceiver mReceiver;
             mStartIntent = null;
         }
 
+    }
 
+
+    @Override
+    protected void onStop()
+    {
+        super.onStop();
+
+        unregisterReceiver(mReceiver);
+
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(receiver);
 
     }
 
 
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState)
+    {
+
+        Button startStopButton = (Button) findViewById(R.id.buttonStartStop);
+        TextView lblMinutes = (TextView) findViewById(R.id.lblMinutes);
+        TextView lblSeconds = (TextView) findViewById(R.id.lblSeconds);
+
+        outState.putString("STARTBUTTONTEXT",startStopButton.getText().toString());
+        outState.putCharSequence("MINUTESTEXT",lblMinutes.getText());
+        outState.putCharSequence("SECONDSTEXT",lblSeconds.getText());
+    }
 }
 
